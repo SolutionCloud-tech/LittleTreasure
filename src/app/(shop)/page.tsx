@@ -55,8 +55,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
                 <Image src={c.variants[0]?.image ?? c.image} alt={c.name} fill sizes="200px" className="object-cover" />
               </Link>
               <div className="absolute -bottom-4 left-6 rounded-2xl border border-line bg-white/95 px-4 py-3 shadow-lift backdrop-blur">
-                <p className="eyebrow">Only 10 of each</p>
                 <p className="font-display text-lg font-semibold">Squishies just landed</p>
+                <p className="text-xs font-medium text-ink-muted">Only 10 of each</p>
               </div>
             </div>
           )}
@@ -67,8 +67,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       <section id="shop" className="mx-auto max-w-6xl scroll-mt-24 px-4 sm:px-6">
         <div className="flex flex-col justify-between gap-5 border-t border-line pt-12 sm:flex-row sm:items-end">
           <div>
-            <p className="eyebrow">The shop</p>
-            <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
               {active ? CATEGORY_LABELS[active] : "Everything in store"}
             </h2>
           </div>

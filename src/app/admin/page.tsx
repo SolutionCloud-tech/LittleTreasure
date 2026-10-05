@@ -8,6 +8,7 @@ import {
   Banknote,
   PackageOpen,
   Plane,
+  Plus,
   Store,
 } from "lucide-react";
 import { RevenueChart } from "@/components/admin/RevenueChart";
@@ -34,13 +35,15 @@ export default async function Dashboard() {
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">{new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Johannesburg" })}</p>
-          <h1 className="font-display mt-1 text-4xl font-semibold tracking-tight">{greeting}</h1>
+          <h1 className="font-display text-4xl font-semibold tracking-tight">{greeting}</h1>
           <p className="mt-1 text-ink-soft">
-            You have <strong className="text-ink">{things}</strong> to look at today.
+            {new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Johannesburg" })}
+            {" · "}You have <strong className="text-ink">{things}</strong> to look at today.
           </p>
         </div>
-        <Link href="/admin/products/new" className="btn-primary">+ Add product</Link>
+        <Link href="/admin/products/new" className="btn-primary">
+          <Plus className="size-4" /> Add product
+        </Link>
       </header>
 
       {/* KPIs */}

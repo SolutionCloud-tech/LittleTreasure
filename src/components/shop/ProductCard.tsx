@@ -13,7 +13,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-white shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-lift"
+      className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-white shadow-card transition duration-300 hover:shadow-lift motion-safe:hover:-translate-y-1"
     >
       <div className="relative aspect-square overflow-hidden bg-sand-deep">
         <Image
@@ -22,7 +22,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           fill
           priority={priority}
           sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
-          className={`object-cover transition duration-500 group-hover:scale-[1.04] ${soldOut ? "grayscale-[60%] opacity-70" : ""}`}
+          className={`object-cover transition duration-500 motion-safe:group-hover:scale-[1.04] ${soldOut ? "grayscale-[60%] opacity-70" : ""}`}
         />
         <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
           <AvailabilityBadge info={info} className="shadow-sm ring-1 ring-black/5" />

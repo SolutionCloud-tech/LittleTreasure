@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, Pencil } from "lucide-react";
+import { CheckCircle2, ExternalLink, Pencil, Plus } from "lucide-react";
 import { StockStepper } from "@/components/admin/StockStepper";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { productAvailability, totalStock } from "@/lib/availability";
@@ -21,7 +21,9 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
           <h1 className="font-display text-4xl font-semibold tracking-tight">Products & stock</h1>
           <p className="mt-1 text-ink-soft">Update counts as stock comes in. Changes show on the shop immediately.</p>
         </div>
-        <Link href="/admin/products/new" className="btn-primary">+ Add product</Link>
+        <Link href="/admin/products/new" className="btn-primary">
+          <Plus className="size-4" /> Add product
+        </Link>
       </header>
 
       {saved && (

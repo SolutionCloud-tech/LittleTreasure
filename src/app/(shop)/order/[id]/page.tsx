@@ -31,10 +31,10 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
       {placed && <ClearCart />}
       <div className="animate-rise space-y-4 text-center">
         <CheckCircle2 className="mx-auto size-14 text-ok" strokeWidth={1.5} />
-        <p className="eyebrow">Order {ref}</p>
         <h1 className="font-display text-4xl font-semibold tracking-tight text-balance">
           Thank you, {order.customer.name.split(" ")[0]}! Your items are reserved.
         </h1>
+        <p className="font-semibold tabular-nums">Order {ref}</p>
         <p className="mx-auto max-w-lg text-ink-soft">
           {order.payment === "eft"
             ? "Pay by EFT using your order number as the reference, then send us the proof of payment on WhatsApp."

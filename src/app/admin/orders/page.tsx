@@ -60,11 +60,11 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                     <Link href={`/admin/orders/${o.id}`} className="font-semibold text-ink after:absolute after:inset-0 group-hover:text-sea">
                       LT{o.number}
                     </Link>
-                    <p className="text-xs text-ink-muted">{formatDateTime(o.createdAt)}</p>
+                    <p className="text-xs whitespace-nowrap text-ink-muted">{formatDateTime(o.createdAt)}</p>
                   </td>
                   <td className="px-3 py-3.5">
                     <p className="font-medium">{o.customer.name}</p>
-                    <a href={whatsappLink(o.customer.phone)} className="relative z-10 inline-flex items-center gap-1 text-xs text-ink-muted hover:text-whatsapp">
+                    <a href={whatsappLink(o.customer.phone)} className="relative z-10 inline-flex items-center gap-1 text-xs whitespace-nowrap text-ink-muted hover:text-whatsapp">
                       <MessageCircle className="size-3" /> {o.customer.phone}
                     </a>
                   </td>

@@ -27,7 +27,7 @@ export function AdminNav({ openOrders }: { openOrders: number }) {
             }`}
           >
             <Icon className={`size-[18px] ${active ? "text-sea" : ""}`} strokeWidth={1.9} />
-            <span className={href === "/admin" ? "" : "hidden sm:inline"}>{label}</span>
+            <span className={active ? "" : "hidden sm:inline"}>{label}</span>
             {href === "/admin/orders" && openOrders > 0 && (
               <span className="ml-auto rounded-full bg-coral px-1.5 py-0.5 text-[11px] leading-none font-bold text-white">
                 {openOrders}
