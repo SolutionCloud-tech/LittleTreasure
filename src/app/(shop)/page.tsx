@@ -2,16 +2,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Banknote, CalendarClock, PackageCheck } from "lucide-react";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { productAvailability } from "@/lib/availability";
 import { listProducts } from "@/lib/data/store";
 import { CATEGORY_LABELS, type Category } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
-  const { category } = await searchParams;
+  const { category, show } = await searchParams;
   const products = await listProducts();
   const active = typeof category === "string" && category in CATEGORY_LABELS ? (category as Category) : undefined;
-  const shown = active ? products.filter((p) => p.category === active) : products;
+  // Quick filters from the menu: ?show=preorder or ?show=in-stock
+  const only = show === "preorder" || show === "in-stock" ? show : undefined;
+  const shown = products.filter((p) => {
+    if (active && p.category !== active) return false;
+    if (only === "preorder") return p.availability === "preorder" && productAvailability(p).tone !== "out";
+    if (only === "in-stock") return p.availability === "in_stock" && productAvailability(p).tone !== "out";
+    return true;
+  });
+  const heading = only === "preorder" ? "Open for pre-order" : only === "in-stock" ? "In stock now" : active ? CATEGORY_LABELS[active] : "Everything in store";
   const categories = [...new Set(products.map((p) => p.category))];
   // The hero collage only uses products that have a real photo.
   const [a, b, c] = products.filter((p) => !p.image.endsWith(".svg"));
@@ -68,11 +77,11 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         <div className="flex flex-col justify-between gap-5 border-t border-line pt-12 sm:flex-row sm:items-end">
           <div>
             <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              {active ? CATEGORY_LABELS[active] : "Everything in store"}
+              {heading}
             </h2>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Chip href="/#shop" active={!active}>All</Chip>
+            <Chip href="/#shop" active={!active && !only}>All</Chip>
             {categories.map((c) => (
               <Chip key={c} href={`/?category=${c}#shop`} active={active === c}>
                 {CATEGORY_LABELS[c]}
@@ -92,7 +101,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       </section>
 
       {/* How it works */}
-      <section className="mx-auto mt-24 max-w-6xl px-4 sm:px-6">
+      <section id="how" className="mx-auto mt-24 max-w-6xl scroll-mt-24 px-4 sm:px-6">
         <div className="grid gap-4 rounded-[32px] bg-ink p-8 text-sand sm:p-12 md:grid-cols-3 md:gap-10">
           <div className="md:col-span-3">
             <p className="text-[11px] font-semibold tracking-[0.14em] text-sun uppercase">How ordering works</p>

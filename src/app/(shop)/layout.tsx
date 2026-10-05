@@ -2,10 +2,39 @@ import Link from "next/link";
 import { CircleUserRound, MessageCircle, Sparkles } from "lucide-react";
 import { CartButton } from "@/components/shop/CartButton";
 import { Logo } from "@/components/shop/Logo";
+import { MegaMenu, type MenuData, type MenuProduct } from "@/components/shop/MegaMenu";
 import { currentUser } from "@/lib/auth";
+import { productAvailability } from "@/lib/availability";
+import { listProducts } from "@/lib/data/store";
+import { formatPrice } from "@/lib/format";
+import { CATEGORY_LABELS, type Category, type Product } from "@/lib/types";
+
+const SHOP_WHATSAPP = "https://wa.me/27820000000";
+
+function menuProduct(p: Product): MenuProduct {
+  const info = productAvailability(p);
+  return { slug: p.slug, name: p.name, image: p.image, price: formatPrice(p.price), status: info.label, tone: info.tone };
+}
+
+async function menuData(): Promise<MenuData> {
+  const products = await listProducts();
+  const categories = (Object.keys(CATEGORY_LABELS) as Category[]).filter((c) => products.some((p) => p.category === c));
+  // Newest product with a real photo gets the feature tile.
+  const featured = [...products]
+    .filter((p) => !p.image.endsWith(".svg") && productAvailability(p).tone !== "out")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  return {
+    columns: categories.map((c) => ({
+      href: `/?category=${c}#shop`,
+      label: CATEGORY_LABELS[c],
+      products: products.filter((p) => p.category === c).map(menuProduct),
+    })),
+    featured: featured && { ...menuProduct(featured), tagline: featured.tagline },
+  };
+}
 
 export default async function ShopLayout({ children }: LayoutProps<"/">) {
-  const user = await currentUser();
+  const [user, menu] = await Promise.all([currentUser(), menuData()]);
   const accountLabel = user ? user.name.split(" ")[0] : "Sign in";
   return (
     <div className="flex min-h-dvh flex-col">
@@ -23,13 +52,10 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
           <Link href="/" aria-label="Little Treasures home">
             <Logo />
           </Link>
-          <nav aria-label="Main" className="hidden items-center gap-7 text-sm font-medium text-ink-soft md:flex">
-            <Link href="/#shop" className="transition hover:text-ink">Shop all</Link>
-            <Link href="/?category=beach#shop" className="transition hover:text-ink">Beach</Link>
-            <Link href="/?category=car#shop" className="transition hover:text-ink">Car</Link>
-            <Link href="/?category=toys#shop" className="transition hover:text-ink">Toys</Link>
-          </nav>
-          <div className="flex items-center gap-2">
+          <div className="hidden md:block">
+            <MegaMenu variant="desktop" data={menu} whatsapp={SHOP_WHATSAPP} />
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2">
             <Link
               href={user ? "/account" : "/account/sign-in"}
               aria-label={user ? `Your account (${accountLabel})` : "Sign in"}
@@ -39,27 +65,11 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
               <span className="hidden max-w-[10ch] truncate sm:inline">{accountLabel}</span>
             </Link>
             <CartButton />
+            <div className="md:hidden">
+              <MegaMenu variant="phone" data={menu} whatsapp={SHOP_WHATSAPP} />
+            </div>
           </div>
         </div>
-        <nav
-          aria-label="Categories"
-          className="-mt-2 flex gap-2 overflow-x-auto px-4 pb-3 text-sm font-medium text-ink-soft md:hidden"
-        >
-          {[
-            ["/#shop", "Shop all"],
-            ["/?category=beach#shop", "Beach"],
-            ["/?category=car#shop", "Car"],
-            ["/?category=toys#shop", "Toys"],
-          ].map(([href, label]) => (
-            <Link
-              key={href}
-              href={href}
-              className="inline-flex h-9 shrink-0 items-center rounded-full border border-line bg-white px-3.5 hover:text-ink"
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
       </header>
 
       <main className="flex-1">{children}</main>
@@ -81,7 +91,7 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
           <div className="space-y-3 text-sm">
             <p className="eyebrow">Questions?</p>
             <a
-              href="https://wa.me/27820000000"
+              href={SHOP_WHATSAPP}
               className="inline-flex items-center gap-2 font-semibold text-sea hover:text-sea-deep"
             >
               <MessageCircle className="size-4" /> Chat on WhatsApp
