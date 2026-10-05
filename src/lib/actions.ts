@@ -2,14 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { currentUser, endSession, safeNext, startSession } from "./auth";
 import {
+  AccountError,
   CheckoutError,
+  createUser,
+  getUserWithHashByEmail,
   placeOrder,
   saveProduct,
   setAvailability,
   setVariantStock,
   updateOrderStatus,
+  updateUser,
 } from "./data/store";
+import { hashPassword, verifyPassword } from "./password";
 import type { CartLine, FulfilmentMethod, OrderStatus, PaymentMethod, Variant } from "./types";
 
 export interface FormState {
@@ -17,6 +23,7 @@ export interface FormState {
   fieldErrors?: Record<string, string>;
   /** Echoed back so the form keeps what the user typed after a failed submit. */
   values?: Record<string, string>;
+  success?: string;
 }
 
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "").trim();
@@ -59,9 +66,11 @@ export async function checkoutAction(_: FormState, fd: FormData): Promise<FormSt
     return { error: "Your cart could not be read. Please refresh and try again." };
   }
 
+  const user = await currentUser();
   let orderId: string;
   try {
     const order = await placeOrder({
+      userId: user?.id,
       lines,
       customer: { name, phone, email: email || undefined, address: fulfilment === "courier" ? address : undefined },
       fulfilment: fulfilment === "courier" ? "courier" : "collect",
@@ -75,6 +84,87 @@ export async function checkoutAction(_: FormState, fd: FormData): Promise<FormSt
   }
   revalidateEverything();
   redirect(`/order/${orderId}?placed=1`);
+}
+
+/* ------------------------------------------------------------------ accounts */
+
+const EMAIL = /^[^s@]+@[^s@]+.[^s@]+$/;
+const MIN_PASSWORD = 8;
+
+function checkDetails(name: string, phone: string, email: string) {
+  const fieldErrors: Record<string, string> = {};
+  if (name.length < 2) fieldErrors.name = "Please enter your name.";
+  if (phone.replace(/D/g, "").length < 9) fieldErrors.phone = "We need a number to WhatsApp you on.";
+  if (!EMAIL.test(email)) fieldErrors.email = "Enter an email address like you@example.com.";
+  return fieldErrors;
+}
+
+export async function signUpAction(_: FormState, fd: FormData): Promise<FormState> {
+  const name = str(fd, "name");
+  const phone = str(fd, "phone");
+  const email = str(fd, "email");
+  const password = String(fd.get("password") ?? "");
+  const values = { name, phone, email };
+
+  const fieldErrors = checkDetails(name, phone, email);
+  if (password.length < MIN_PASSWORD) fieldErrors.password = `Use at least ${MIN_PASSWORD} characters.`;
+  if (Object.keys(fieldErrors).length) return { fieldErrors, values };
+
+  let userId: string;
+  try {
+    userId = (await createUser({ name, phone, email, passwordHash: hashPassword(password) })).id;
+  } catch (e) {
+    if (e instanceof AccountError) {
+      return { fieldErrors: { email: "There is already an account with this email. Sign in instead?" }, values };
+    }
+    throw e;
+  }
+  await startSession(userId);
+  redirect(safeNext(str(fd, "next")));
+}
+
+// Compared against when the email is unknown, so a wrong email takes as long as a wrong password.
+let dummyHash: string | undefined;
+
+export async function signInAction(_: FormState, fd: FormData): Promise<FormState> {
+  const email = str(fd, "email");
+  const password = String(fd.get("password") ?? "");
+  const values = { email };
+  if (!email || !password) return { error: "Enter your email and password.", values };
+
+  const user = await getUserWithHashByEmail(email);
+  dummyHash ??= hashPassword("not-a-real-password");
+  const ok = verifyPassword(password, user?.passwordHash ?? dummyHash);
+  if (!user || !ok) return { error: "That email and password don’t match. Check them and try again.", values };
+
+  await startSession(user.id);
+  redirect(safeNext(str(fd, "next")));
+}
+
+export async function signOutAction() {
+  await endSession();
+  revalidateEverything();
+  redirect("/");
+}
+
+export async function updateDetailsAction(_: FormState, fd: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) redirect("/account/sign-in");
+  const name = str(fd, "name");
+  const phone = str(fd, "phone");
+  const email = str(fd, "email");
+  const values = { name, phone, email };
+  const fieldErrors = checkDetails(name, phone, email);
+  if (Object.keys(fieldErrors).length) return { fieldErrors, values };
+
+  try {
+    await updateUser(user.id, { name, phone, email });
+  } catch (e) {
+    if (e instanceof AccountError) return { fieldErrors: { email: "Another account already uses this email." }, values };
+    throw e;
+  }
+  revalidatePath("/", "layout");
+  return { success: "Your details are saved.", values };
 }
 
 /* --------------------------------------------------------------------- admin */

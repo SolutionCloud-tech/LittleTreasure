@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { MessageCircle, Sparkles } from "lucide-react";
+import { CircleUserRound, MessageCircle, Sparkles } from "lucide-react";
 import { CartButton } from "@/components/shop/CartButton";
 import { Logo } from "@/components/shop/Logo";
+import { currentUser } from "@/lib/auth";
 
-export default function ShopLayout({ children }: LayoutProps<"/">) {
+export default async function ShopLayout({ children }: LayoutProps<"/">) {
+  const user = await currentUser();
+  const accountLabel = user ? user.name.split(" ")[0] : "Sign in";
   return (
     <div className="flex min-h-dvh flex-col">
       <div className="bg-sea text-[13px] text-sea-tint">
@@ -26,7 +29,17 @@ export default function ShopLayout({ children }: LayoutProps<"/">) {
             <Link href="/?category=car#shop" className="transition hover:text-ink">Car</Link>
             <Link href="/?category=toys#shop" className="transition hover:text-ink">Toys</Link>
           </nav>
-          <CartButton />
+          <div className="flex items-center gap-2">
+            <Link
+              href={user ? "/account" : "/account/sign-in"}
+              aria-label={user ? `Your account (${accountLabel})` : "Sign in"}
+              className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-semibold text-ink-soft transition hover:bg-white hover:text-ink sm:px-3.5"
+            >
+              <CircleUserRound className="size-5" strokeWidth={1.9} />
+              <span className="hidden max-w-[10ch] truncate sm:inline">{accountLabel}</span>
+            </Link>
+            <CartButton />
+          </div>
         </div>
         <nav
           aria-label="Categories"

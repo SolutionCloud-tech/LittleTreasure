@@ -63,9 +63,24 @@ export interface Customer {
   address?: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  /** scrypt hash with its salt, see src/lib/auth.ts. Never sent to the browser. */
+  passwordHash: string;
+  createdAt: string;
+}
+
+/** What pages and client components get to see of a signed-in user. */
+export type PublicUser = Omit<User, "passwordHash">;
+
 export interface Order {
   id: string;
   number: number;
+  /** Set when the order was placed while signed in. Guest orders have none. */
+  userId?: string;
   createdAt: string;
   status: OrderStatus;
   customer: Customer;

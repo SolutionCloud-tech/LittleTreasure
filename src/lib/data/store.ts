@@ -9,7 +9,10 @@ import type {
   OrderStatus,
   PaymentMethod,
   Product,
+  PublicUser,
+  User,
 } from "../types";
+import { hashPassword } from "../password";
 import { seedOrders, seedProducts } from "./seed";
 
 /**
@@ -24,6 +27,7 @@ import { seedOrders, seedProducts } from "./seed";
 interface DB {
   products: Product[];
   orders: Order[];
+  users: User[];
 }
 
 const g = globalThis as unknown as { __littleTreasuresDb?: DB };
@@ -31,7 +35,18 @@ const g = globalThis as unknown as { __littleTreasuresDb?: DB };
 function db(): DB {
   if (!g.__littleTreasuresDb) {
     const products = seedProducts();
-    g.__littleTreasuresDb = { products, orders: seedOrders(products) };
+    const orders = seedOrders(products);
+    // Demo customer for the POC: thandi@example.com / demo1234, with her seeded orders linked.
+    const thandi: User = {
+      id: "usr_thandi",
+      name: "Thandi Mokoena",
+      phone: "082 555 0141",
+      email: "thandi@example.com",
+      passwordHash: hashPassword("demo1234"),
+      createdAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
+    };
+    for (const o of orders) if (o.customer.name === thandi.name) o.userId = thandi.id;
+    g.__littleTreasuresDb = { products, orders, users: [thandi] };
   }
   return g.__littleTreasuresDb;
 }
@@ -116,6 +131,11 @@ export async function listOrders(status?: OrderStatus): Promise<Order[]> {
   return clone(all.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 }
 
+export async function listOrdersForUser(userId: string): Promise<Order[]> {
+  const mine = db().orders.filter((o) => o.userId === userId);
+  return clone(mine.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+}
+
 export async function getOrder(id: string): Promise<Order | undefined> {
   const o = db().orders.find((x) => x.id === id);
   return o && clone(o);
@@ -129,6 +149,7 @@ export async function placeOrder(input: {
   fulfilment: FulfilmentMethod;
   payment: PaymentMethod;
   note?: string;
+  userId?: string;
 }): Promise<Order> {
   const store = db();
   if (!input.lines.length) throw new CheckoutError("Your cart is empty.");
@@ -180,6 +201,7 @@ export async function placeOrder(input: {
   const order: Order = {
     id: `ord_${number}`,
     number,
+    userId: input.userId,
     createdAt: now,
     status: "pending_payment",
     customer: input.customer,
@@ -225,6 +247,59 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
   }
   order.status = status;
   order.history.push({ status, at: new Date().toISOString() });
+}
+
+/* --------------------------------------------------------------------- users */
+
+const toPublic = (user: User): PublicUser => {
+  const { passwordHash, ...rest } = user;
+  void passwordHash;
+  return clone(rest);
+};
+
+export const normaliseEmail = (email: string) => email.trim().toLowerCase();
+
+export async function getUser(id: string): Promise<PublicUser | undefined> {
+  const u = db().users.find((x) => x.id === id);
+  return u && toPublic(u);
+}
+
+/** Includes the password hash, so only auth code should call this. */
+export async function getUserWithHashByEmail(email: string): Promise<User | undefined> {
+  const u = db().users.find((x) => x.email === normaliseEmail(email));
+  return u && clone(u);
+}
+
+export async function getUserHash(id: string): Promise<string | undefined> {
+  return db().users.find((x) => x.id === id)?.passwordHash;
+}
+
+export class AccountError extends Error {}
+
+export async function createUser(input: { name: string; phone: string; email: string; passwordHash: string }) {
+  const store = db();
+  const email = normaliseEmail(input.email);
+  if (store.users.some((u) => u.email === email)) throw new AccountError("email-taken");
+  const user: User = {
+    ...input,
+    email,
+    id: `usr_${Math.random().toString(36).slice(2, 10)}`,
+    createdAt: new Date().toISOString(),
+  };
+  store.users.push(user);
+  return toPublic(user);
+}
+
+export async function updateUser(id: string, patch: Partial<Pick<User, "name" | "phone" | "email" | "passwordHash">>) {
+  const store = db();
+  const user = store.users.find((u) => u.id === id);
+  if (!user) throw new AccountError("not-found");
+  if (patch.email !== undefined) {
+    patch.email = normaliseEmail(patch.email);
+    if (store.users.some((u) => u.email === patch.email && u.id !== id)) throw new AccountError("email-taken");
+  }
+  Object.assign(user, patch);
+  return toPublic(user);
 }
 
 /* ----------------------------------------------------------------- reporting */

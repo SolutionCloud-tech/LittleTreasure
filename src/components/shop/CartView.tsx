@@ -7,9 +7,18 @@ import { AlertCircle, ArrowRight, Loader2, Minus, Plus, Trash2 } from "lucide-re
 import { useCart } from "@/components/cart/CartProvider";
 import { checkoutAction, type FormState } from "@/lib/actions";
 import { formatPrice, relativeDay } from "@/lib/format";
-import type { Product } from "@/lib/types";
+import type { Product, PublicUser } from "@/lib/types";
+import { Field } from "./Field";
 
-export function CartView({ products, shippingFee }: { products: Product[]; shippingFee: number }) {
+export function CartView({
+  products,
+  shippingFee,
+  user,
+}: {
+  products: Product[];
+  shippingFee: number;
+  user: PublicUser | null;
+}) {
   const { lines, ready, setQuantity, remove } = useCart();
   const [fulfilment, setFulfilment] = useState<"collect" | "courier">("collect");
   const [state, formAction, pending] = useActionState<FormState, FormData>(checkoutAction, {});
@@ -130,12 +139,25 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
         <section className="card space-y-6 p-5 sm:p-7">
           <div>
             <h2 className="font-display text-2xl font-semibold">Your details</h2>
-            <p className="mt-1 text-sm text-ink-soft">We&apos;ll confirm your order and send updates on WhatsApp.</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              We&apos;ll confirm your order and send updates on WhatsApp.{" "}
+              {user ? (
+                <>This order will show in <Link href="/account" className="font-semibold text-sea underline-offset-4 hover:underline">your account</Link>.</>
+              ) : (
+                <>
+                  Have an account?{" "}
+                  <Link href="/account/sign-in?next=/cart" className="font-semibold text-sea underline-offset-4 hover:underline">
+                    Sign in
+                  </Link>{" "}
+                  to fill this in and keep track of your orders.
+                </>
+              )}
+            </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full name" name="name" defaultValue={v.name} error={fe.name} autoComplete="name" />
-            <Field label="WhatsApp number" name="phone" defaultValue={v.phone} error={fe.phone} autoComplete="tel" placeholder="082 123 4567" inputMode="tel" />
-            <Field label="Email (optional)" name="email" defaultValue={v.email} type="email" autoComplete="email" className="sm:col-span-2" />
+            <Field label="Full name" name="name" defaultValue={v.name ?? user?.name} error={fe.name} autoComplete="name" />
+            <Field label="WhatsApp number" name="phone" defaultValue={v.phone ?? user?.phone} error={fe.phone} autoComplete="tel" placeholder="082 123 4567" inputMode="tel" />
+            <Field label="Email (optional)" name="email" defaultValue={v.email ?? user?.email} type="email" autoComplete="email" className="sm:col-span-2" />
           </div>
 
           <div className="space-y-3">
@@ -222,33 +244,6 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
         <p className="text-center text-xs text-ink-muted">No account needed. Your items are held once you place the order.</p>
       </aside>
     </form>
-  );
-}
-
-function Field({
-  label,
-  name,
-  error,
-  className = "",
-  ...rest
-}: { label: string; name: string; error?: string; className?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div className={className}>
-      <label className="label" htmlFor={name}>{label}</label>
-      <input
-        id={name}
-        name={name}
-        className={`field ${error ? "border-coral focus:border-coral focus:ring-coral/10" : ""}`}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${name}-error` : undefined}
-        {...rest}
-      />
-      {error && (
-        <p id={`${name}-error`} className="mt-1.5 text-xs font-medium text-coral-deep">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }
 
