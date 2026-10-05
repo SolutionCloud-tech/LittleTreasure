@@ -9,7 +9,7 @@ export function CartButton() {
   return (
     <Link
       href="/cart"
-      className="relative inline-flex h-11 items-center gap-2 rounded-full bg-ink pr-4 pl-3.5 text-sm font-semibold text-sand transition hover:bg-sea-deep"
+      className="relative inline-flex h-11 items-center gap-2 rounded-full bg-ink pr-3 pl-3 sm:pr-4 sm:pl-3.5 text-sm font-semibold text-sand transition hover:bg-sea-deep"
       aria-label={`Cart, ${count} item${count === 1 ? "" : "s"}`}
     >
       <ShoppingBag className="size-[18px]" strokeWidth={2} />

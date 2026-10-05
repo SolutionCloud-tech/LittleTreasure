@@ -48,14 +48,14 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
       </div>
 
       <header className="sticky top-0 z-30 border-b border-line/70 bg-sand/85 backdrop-blur-md">
-        <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
           <Link href="/" aria-label="Little Treasures home">
             <Logo />
           </Link>
           <div className="hidden md:block">
             <MegaMenu variant="desktop" data={menu} whatsapp={SHOP_WHATSAPP} />
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center sm:gap-2">
             <Link
               href={user ? "/account" : "/account/sign-in"}
               aria-label={user ? `Your account (${accountLabel})` : "Sign in"}
