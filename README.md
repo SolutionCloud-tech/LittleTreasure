@@ -26,17 +26,23 @@ npm run dev        # http://localhost:3000, admin at /admin
 2. Add an environment variable `AUTH_SECRET` set to a long random string
    (e.g. the output of `openssl rand -hex 32`). The app refuses to start in production
    without it.
-3. Deploy. Every push redeploys automatically.
+3. In the project's **Storage** tab, create a free **Upstash Redis** database and
+   connect it to the project. This adds `KV_REST_API_URL` / `KV_REST_API_TOKEN`.
+   Without it, each Vercel server instance keeps its own in-memory copy, so orders
+   and accounts appear to vanish.
+4. Deploy (or redeploy after adding variables). Every push redeploys automatically.
 
-Because the POC keeps data in memory, orders, stock changes and accounts made on the
-live demo reset whenever Vercel restarts the server, and can differ between server
-instances. That is expected until a database is added.
+With Redis connected, the whole demo dataset is stored as one JSON document
+(`src/lib/data/persist.ts`). Locally, without those variables, it stays in memory.
+To reset the live demo to its starting data, delete the `little-treasures:db:v1` key
+in the Upstash console.
 
 ## How it's put together
 
 - Next.js (App Router) + TypeScript + Tailwind CSS.
-- All data goes through `src/lib/data/store.ts`. For the POC it is an in-memory store
-  seeded from `src/lib/data/seed.ts`, so **changes reset when the server restarts**.
+- All data goes through `src/lib/data/store.ts`. For the POC it is seeded from
+  `src/lib/data/seed.ts` and kept in memory locally (resets on restart) or in Upstash
+  Redis when deployed.
   Moving to a real database means re-implementing that one file; nothing else reads data
   directly.
 - Mutations are server actions in `src/lib/actions.ts`. Checkout re-checks prices and

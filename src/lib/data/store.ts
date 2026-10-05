@@ -14,15 +14,22 @@ import type {
   User,
 } from "../types";
 import { hashPassword } from "../password";
+import { cache } from "react";
+import { persistenceEnabled, loadSnapshot, saveSnapshot, seedSnapshot } from "./persist";
 import { seedOrders, seedProducts } from "./seed";
 
 /**
- * In-memory data store for the POC.
+ * Data store for the POC.
  *
  * Every read and write in the app goes through the functions in this file, so
  * swapping in a real database later (Postgres via Prisma/Drizzle, Supabase, …)
- * means re-implementing this module and nothing else. Data resets when the
- * server restarts.
+ * means re-implementing this module and nothing else.
+ *
+ * Locally the data lives in memory and resets when the server restarts. When
+ * Upstash Redis is configured (see persist.ts), each request loads the dataset
+ * from Redis and every write saves it back, so all server instances agree.
+ * Two writes landing at the same instant can overwrite each other; that's fine
+ * for a demo and goes away with a real database.
  */
 
 interface DB {
@@ -33,23 +40,35 @@ interface DB {
 
 const g = globalThis as unknown as { __littleTreasuresDb?: DB };
 
-function db(): DB {
-  if (!g.__littleTreasuresDb) {
-    const products = seedProducts();
-    const orders = seedOrders(products);
-    // Demo customer for the POC: thandi@example.com / demo1234, with her seeded orders linked.
-    const thandi: User = {
-      id: "usr_thandi",
-      name: "Thandi Mokoena",
-      phone: "082 555 0141",
-      email: "thandi@example.com",
-      passwordHash: hashPassword("demo1234"),
-      createdAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
-    };
-    for (const o of orders) if (o.customer.name === thandi.name) o.userId = thandi.id;
-    g.__littleTreasuresDb = { products, orders, users: [thandi] };
-  }
-  return g.__littleTreasuresDb;
+function seed(): DB {
+  const products = seedProducts();
+  const orders = seedOrders(products);
+  // Demo customer for the POC: thandi@example.com / demo1234, with her seeded orders linked.
+  const thandi: User = {
+    id: "usr_thandi",
+    name: "Thandi Mokoena",
+    phone: "082 555 0141",
+    email: "thandi@example.com",
+    passwordHash: hashPassword("demo1234"),
+    createdAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
+  };
+  for (const o of orders) if (o.customer.name === thandi.name) o.userId = thandi.id;
+  return { products, orders, users: [thandi] };
+}
+
+/** Loads the dataset once per request (React's cache dedupes repeat calls). */
+const db = cache(async (): Promise<DB> => {
+  if (!persistenceEnabled) return (g.__littleTreasuresDb ??= seed());
+  const existing = await loadSnapshot<DB>();
+  if (existing) return existing;
+  const fresh = seed();
+  if (await seedSnapshot(fresh)) return fresh;
+  return (await loadSnapshot<DB>()) ?? fresh;
+});
+
+/** Saves the dataset after a write. A no-op in memory mode, where writes are already live. */
+async function commit(store: DB) {
+  if (persistenceEnabled) await saveSnapshot(store);
 }
 
 const clone = <T,>(v: T): T => structuredClone(v);
@@ -59,17 +78,17 @@ export const SHIPPING_FEE = 9900;
 /* ------------------------------------------------------------------ products */
 
 export async function listProducts(opts: { includeHidden?: boolean } = {}): Promise<Product[]> {
-  const all = db().products.filter((p) => opts.includeHidden || p.status === "active");
+  const all = (await db()).products.filter((p) => opts.includeHidden || p.status === "active");
   return clone(all);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  const p = db().products.find((x) => x.slug === slug && x.status === "active");
+  const p = (await db()).products.find((x) => x.slug === slug && x.status === "active");
   return p && clone(p);
 }
 
 export async function getProduct(id: string): Promise<Product | undefined> {
-  const p = db().products.find((x) => x.id === id);
+  const p = (await db()).products.find((x) => x.id === id);
   return p && clone(p);
 }
 
@@ -85,7 +104,7 @@ export function slugify(s: string): string {
 }
 
 export async function saveProduct(input: ProductInput): Promise<Product> {
-  const store = db();
+  const store = await db();
   const now = new Date().toISOString();
   const existing = input.id ? store.products.find((p) => p.id === input.id) : undefined;
 
@@ -96,6 +115,7 @@ export async function saveProduct(input: ProductInput): Promise<Product> {
 
   if (existing) {
     Object.assign(existing, { ...input, id: existing.id, slug, updatedAt: now });
+    await commit(store);
     return clone(existing);
   }
   const product: Product = {
@@ -106,39 +126,44 @@ export async function saveProduct(input: ProductInput): Promise<Product> {
     updatedAt: now,
   };
   store.products.unshift(product);
+  await commit(store);
   return clone(product);
 }
 
 export async function setVariantStock(productId: string, variantId: string, stock: number) {
-  const p = db().products.find((x) => x.id === productId);
+  const store = await db();
+  const p = store.products.find((x) => x.id === productId);
   const v = p?.variants.find((x) => x.id === variantId);
   if (!p || !v) throw new Error("Variant not found");
   v.stock = Math.max(0, Math.floor(stock));
   p.updatedAt = new Date().toISOString();
+  await commit(store);
 }
 
 export async function setAvailability(productId: string, availability: Availability) {
-  const p = db().products.find((x) => x.id === productId);
+  const store = await db();
+  const p = store.products.find((x) => x.id === productId);
   if (!p) throw new Error("Product not found");
   p.availability = availability;
   if (availability === "in_stock") p.preorderEta = undefined;
   p.updatedAt = new Date().toISOString();
+  await commit(store);
 }
 
 /* -------------------------------------------------------------------- orders */
 
 export async function listOrders(status?: OrderStatus): Promise<Order[]> {
-  const all = db().orders.filter((o) => !status || o.status === status);
+  const all = (await db()).orders.filter((o) => !status || o.status === status);
   return clone(all.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 }
 
 export async function listOrdersForUser(userId: string): Promise<Order[]> {
-  const mine = db().orders.filter((o) => o.userId === userId);
+  const mine = (await db()).orders.filter((o) => o.userId === userId);
   return clone(mine.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 }
 
 export async function getOrder(id: string): Promise<Order | undefined> {
-  const o = db().orders.find((x) => x.id === id);
+  const o = (await db()).orders.find((x) => x.id === id);
   return o && clone(o);
 }
 
@@ -152,7 +177,7 @@ export async function placeOrder(input: {
   note?: string;
   userId?: string;
 }): Promise<Order> {
-  const store = db();
+  const store = await db();
   if (!input.lines.length) throw new CheckoutError("Your cart is empty.");
 
   // Merge repeated lines for the same option so two lines can't oversell it together.
@@ -217,6 +242,7 @@ export async function placeOrder(input: {
     history: [{ status: "pending_payment", at: now }],
   };
   store.orders.unshift(order);
+  await commit(store);
   return clone(order);
 }
 
@@ -230,7 +256,7 @@ const TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 };
 
 export async function updateOrderStatus(id: string, status: OrderStatus) {
-  const store = db();
+  const store = await db();
   const order = store.orders.find((o) => o.id === id);
   if (!order) throw new Error("Order not found");
   if (order.status === status) return;
@@ -249,6 +275,7 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
   }
   order.status = status;
   order.history.push({ status, at: new Date().toISOString() });
+  await commit(store);
 }
 
 /* --------------------------------------------------------------------- users */
@@ -262,24 +289,24 @@ const toPublic = (user: User): PublicUser => {
 export const normaliseEmail = (email: string) => email.trim().toLowerCase();
 
 export async function getUser(id: string): Promise<PublicUser | undefined> {
-  const u = db().users.find((x) => x.id === id);
+  const u = (await db()).users.find((x) => x.id === id);
   return u && toPublic(u);
 }
 
 /** Includes the password hash, so only auth code should call this. */
 export async function getUserWithHashByEmail(email: string): Promise<User | undefined> {
-  const u = db().users.find((x) => x.email === normaliseEmail(email));
+  const u = (await db()).users.find((x) => x.email === normaliseEmail(email));
   return u && clone(u);
 }
 
 export async function getUserHash(id: string): Promise<string | undefined> {
-  return db().users.find((x) => x.id === id)?.passwordHash;
+  return (await db()).users.find((x) => x.id === id)?.passwordHash;
 }
 
 export class AccountError extends Error {}
 
 export async function createUser(input: { name: string; phone: string; email: string; passwordHash: string }) {
-  const store = db();
+  const store = await db();
   const email = normaliseEmail(input.email);
   if (store.users.some((u) => u.email === email)) throw new AccountError("email-taken");
   const user: User = {
@@ -289,11 +316,12 @@ export async function createUser(input: { name: string; phone: string; email: st
     createdAt: new Date().toISOString(),
   };
   store.users.push(user);
+  await commit(store);
   return toPublic(user);
 }
 
 export async function updateUser(id: string, patch: Partial<Pick<User, "name" | "phone" | "email" | "passwordHash">>) {
-  const store = db();
+  const store = await db();
   const user = store.users.find((u) => u.id === id);
   if (!user) throw new AccountError("not-found");
   if (patch.email !== undefined) {
@@ -301,13 +329,14 @@ export async function updateUser(id: string, patch: Partial<Pick<User, "name" | 
     if (store.users.some((u) => u.email === patch.email && u.id !== id)) throw new AccountError("email-taken");
   }
   Object.assign(user, patch);
+  await commit(store);
   return toPublic(user);
 }
 
 /* ----------------------------------------------------------------- reporting */
 
 export async function getDashboard() {
-  const { products, orders } = db();
+  const { products, orders } = await db();
   const now = new Date();
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const today = startOfDay(now).getTime();
