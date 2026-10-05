@@ -39,7 +39,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             {info.detail && <p className="text-xs font-medium text-ink-muted">{info.detail}</p>}
           </div>
           {swatches.length > 0 ? (
-            <div className="flex items-center -space-x-1.5" aria-label={`${product.variants.length} colours`}>
+            <div className="flex items-center -space-x-1.5" role="img" aria-label={`${product.variants.length} colours`}>
               {swatches.map((v) => (
                 <span
                   key={v.id}

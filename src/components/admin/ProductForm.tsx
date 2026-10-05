@@ -116,6 +116,8 @@ export function ProductForm({ product }: { product?: Product }) {
               <button
                 type="button"
                 key={src}
+                aria-label={`Use photo: ${src.split("/").pop()?.replace(/\.\w+$/, "")}`}
+                aria-pressed={image === src}
                 onClick={() => setImage(src)}
                 className={`relative aspect-square overflow-hidden rounded-xl border-2 bg-sand-deep transition ${
                   image === src ? "border-ink" : "border-transparent hover:border-line"
@@ -126,6 +128,7 @@ export function ProductForm({ product }: { product?: Product }) {
               </button>
             ))}
           </div>
+          <Err msg={fe.image} />
           <p className="text-xs text-ink-muted">
             In the real shop you&apos;ll upload photos straight from your phone. For the demo, pick one of these.
           </p>
@@ -137,11 +140,11 @@ export function ProductForm({ product }: { product?: Product }) {
               <div key={i} className="flex items-center gap-2">
                 <label className="relative size-11 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-line" title="Colour swatch (optional)">
                   <span className="absolute inset-0" style={{ background: v.swatch || "repeating-linear-gradient(45deg,#f2ebdf 0 4px,#fff 4px 8px)" }} />
-                  <input type="color" value={v.swatch || "#ffffff"} onChange={(e) => update(i, { swatch: e.target.value })} className="absolute inset-0 opacity-0" />
+                  <input type="color" aria-label={`Colour swatch for ${v.name || "this option"} (optional)`} value={v.swatch || "#ffffff"} onChange={(e) => update(i, { swatch: e.target.value })} className="absolute inset-0 opacity-0" />
                 </label>
                 <input aria-label="Option name" className="field" value={v.name} onChange={(e) => update(i, { name: e.target.value })} placeholder="e.g. Beige" />
                 <input
-                  aria-label="Stock"
+                  aria-label={`${v.name || "Option"} stock`}
                   inputMode="numeric"
                   className="field w-24 text-center"
                   value={v.stock}
@@ -149,7 +152,7 @@ export function ProductForm({ product }: { product?: Product }) {
                 />
                 <button
                   type="button"
-                  aria-label="Remove option"
+                  aria-label={`Remove ${v.name || "option"}`}
                   onClick={() => setVariants((vs) => vs.filter((_, k) => k !== i))}
                   disabled={variants.length === 1}
                   className="grid size-11 shrink-0 place-items-center rounded-xl text-ink-muted hover:bg-coral-tint hover:text-coral-deep disabled:opacity-30"
@@ -199,7 +202,7 @@ export function ProductForm({ product }: { product?: Product }) {
               onChange={(e) => setStatus(e.target.checked ? "active" : "draft")}
               className="peer sr-only"
             />
-            <span className="relative h-6 w-11 rounded-full bg-line transition peer-checked:bg-ok after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
+            <span className="relative h-6 w-11 rounded-full bg-line transition peer-checked:bg-ok after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-sea" />
           </label>
         </Section>
 
@@ -211,7 +214,7 @@ export function ProductForm({ product }: { product?: Product }) {
         </div>
 
         {state.error && (
-          <p className="flex gap-2 rounded-xl bg-coral-tint p-3 text-sm text-coral-deep">
+          <p role="alert" className="flex gap-2 rounded-xl bg-coral-tint p-3 text-sm text-coral-deep">
             <AlertCircle className="size-4 shrink-0" /> {state.error}
           </p>
         )}
@@ -252,5 +255,9 @@ function Radio({ title, text, ...input }: { title: string; text: string } & Reac
 }
 
 function Err({ msg }: { msg?: string }) {
-  return msg ? <p className="mt-1.5 text-xs font-medium text-coral-deep">{msg}</p> : null;
+  return msg ? (
+    <p role="alert" className="mt-1.5 text-xs font-medium text-coral-deep">
+      {msg}
+    </p>
+  ) : null;
 }

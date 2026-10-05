@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, MessageCircle } from "lucide-react";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { updateOrderStatusAction } from "@/lib/actions";
 import { getOrder } from "@/lib/data/store";
 import { formatDateTime, formatPrice, whatsappLink } from "@/lib/format";
@@ -54,7 +55,12 @@ export default async function OrderDetail({ params }: PageProps<"/admin/orders/[
         </div>
         {open && (
           <div className="flex flex-wrap gap-2">
-            <StatusButton id={order.id} status="cancelled" className="btn-ghost text-coral-deep">
+            <StatusButton
+              id={order.id}
+              status="cancelled"
+              className="btn-ghost text-coral-deep"
+              confirm={`Cancel order LT${order.number}? Its items go back into stock.`}
+            >
               Cancel & restock
             </StatusButton>
             {next && (
@@ -66,7 +72,7 @@ export default async function OrderDetail({ params }: PageProps<"/admin/orders/[
         )}
       </header>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="space-y-6">
           <section className="card overflow-hidden">
             <ul className="divide-y divide-line-soft">
@@ -151,9 +157,9 @@ export default async function OrderDetail({ params }: PageProps<"/admin/orders/[
                 href={whatsappLink(order.customer.phone, m.text)}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-3 rounded-xl border border-line px-3.5 py-2.5 text-sm font-medium transition hover:border-[#1f9d55] hover:text-[#188046]"
+                className="flex items-center gap-3 rounded-xl border border-line px-3.5 py-2.5 text-sm font-medium transition hover:border-whatsapp hover:text-whatsapp-deep"
               >
-                <MessageCircle className="size-4 text-[#1f9d55]" /> {m.label}
+                <MessageCircle className="size-4 text-whatsapp" /> {m.label}
               </a>
             ))}
           </section>
@@ -167,18 +173,22 @@ function StatusButton({
   id,
   status,
   className,
+  confirm,
   children,
 }: {
   id: string;
   status: OrderStatus;
   className: string;
+  confirm?: string;
   children: React.ReactNode;
 }) {
   return (
     <form action={updateOrderStatusAction}>
       <input type="hidden" name="orderId" value={id} />
       <input type="hidden" name="status" value={status} />
-      <button className={className}>{children}</button>
+      <SubmitButton className={className} confirm={confirm}>
+        {children}
+      </SubmitButton>
     </form>
   );
 }

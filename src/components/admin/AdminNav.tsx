@@ -20,6 +20,8 @@ export function AdminNav({ openOrders }: { openOrders: number }) {
           <Link
             key={href}
             href={href}
+            aria-label={label}
+            aria-current={active ? "page" : undefined}
             className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap transition ${
               active ? "bg-white text-ink shadow-card" : "text-ink-soft hover:bg-white/60 hover:text-ink"
             }`}
@@ -36,6 +38,7 @@ export function AdminNav({ openOrders }: { openOrders: number }) {
       })}
       <Link
         href="/"
+        aria-label="View shop"
         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap text-ink-soft transition hover:bg-white/60 hover:text-ink md:mt-4"
       >
         <Store className="size-[18px]" strokeWidth={1.9} />

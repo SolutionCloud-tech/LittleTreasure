@@ -30,10 +30,10 @@ export function RevenueChart({ data }: { data: Point[] }) {
 
   return (
     <div className="relative">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Revenue per day, last 30 days">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" aria-label="Revenue per day, last 30 days. Tab through the bars or tap one for the day's figures.">
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke="#ece6dc" strokeWidth={1} />
+            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} strokeWidth={1} className="stroke-line-soft" />
             <text x={pad.l - 10} y={y(t) + 4} textAnchor="end" className="fill-ink-muted text-[11px] tabular-nums">
               {t === 0 ? "R0" : formatPrice(t)}
             </text>
@@ -45,7 +45,18 @@ export function RevenueChart({ data }: { data: Point[] }) {
           const r = Math.min(4, bw / 2, bh);
           const base = pad.t + ih;
           return (
-            <g key={d.date} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+            <g
+              key={d.date}
+              tabIndex={0}
+              role="img"
+              aria-label={`${label(d.date)}: ${formatPrice(d.revenue)}, ${d.orders} order${d.orders === 1 ? "" : "s"}`}
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(null)}
+              onFocus={() => setHover(i)}
+              onBlur={() => setHover(null)}
+              onClick={() => setHover(i)}
+              className="outline-none"
+            >
               <rect x={pad.l + i * slot} y={pad.t} width={slot} height={ih} fill="transparent" />
               {bh > 0 && (
                 <path
@@ -61,7 +72,7 @@ export function RevenueChart({ data }: { data: Point[] }) {
             </g>
           );
         })}
-        <line x1={pad.l} x2={W - pad.r} y1={pad.t + ih} y2={pad.t + ih} stroke="#cfc6b8" strokeWidth={1} />
+        <line x1={pad.l} x2={W - pad.r} y1={pad.t + ih} y2={pad.t + ih} strokeWidth={1} className="stroke-line" />
       </svg>
       {h && hover !== null && (
         <div

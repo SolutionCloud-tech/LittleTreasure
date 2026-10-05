@@ -31,15 +31,18 @@ export function formatDateTime(iso: string): string {
   });
 }
 
+/** YYYY-MM-DD for the given instant, as a calendar day in South Africa. */
+function dayKey(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+
 export function relativeDay(iso: string): string {
   const d = new Date(iso);
-  const today = new Date();
-  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((start(d) - start(today)) / 86_400_000);
+  const diff = Math.round((Date.parse(dayKey(d)) - Date.parse(dayKey(new Date()))) / 86_400_000);
   if (diff === 0) return "today";
   if (diff === 1) return "tomorrow";
   if (diff === -1) return "yesterday";
-  if (diff > 1 && diff < 7) return d.toLocaleDateString("en-ZA", { weekday: "long" });
+  if (diff > 1 && diff < 7) return d.toLocaleDateString("en-ZA", { weekday: "long", timeZone: TZ });
   return formatDate(iso, { day: "numeric", month: "long" });
 }
 

@@ -10,16 +10,7 @@ import {
   setVariantStock,
   updateOrderStatus,
 } from "./data/store";
-import type {
-  Availability,
-  CartLine,
-  Category,
-  FulfilmentMethod,
-  OrderStatus,
-  PaymentMethod,
-  ProductStatus,
-  Variant,
-} from "./types";
+import type { CartLine, FulfilmentMethod, OrderStatus, PaymentMethod, Variant } from "./types";
 
 export interface FormState {
   error?: string;
@@ -29,6 +20,16 @@ export interface FormState {
 }
 
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "").trim();
+
+/** Returns the value if it is one of the allowed options, otherwise the fallback. */
+function oneOf<T extends string>(value: string, allowed: readonly T[], fallback: T): T {
+  return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
+const ORDER_STATUSES = ["pending_payment", "paid", "ready", "completed", "cancelled"] as const;
+const CATEGORIES = ["beach", "car", "toys", "home"] as const;
+const PRODUCT_STATUSES = ["active", "draft", "archived"] as const;
+const AVAILABILITIES = ["in_stock", "preorder"] as const;
 
 function revalidateEverything() {
   revalidatePath("/", "layout");
@@ -79,17 +80,21 @@ export async function checkoutAction(_: FormState, fd: FormData): Promise<FormSt
 /* --------------------------------------------------------------------- admin */
 
 export async function updateOrderStatusAction(fd: FormData) {
-  await updateOrderStatus(str(fd, "orderId"), str(fd, "status") as OrderStatus);
+  const status = str(fd, "status");
+  if (!(ORDER_STATUSES as readonly string[]).includes(status)) return;
+  await updateOrderStatus(str(fd, "orderId"), status as OrderStatus);
   revalidateEverything();
 }
 
 export async function setStockAction(fd: FormData) {
-  await setVariantStock(str(fd, "productId"), str(fd, "variantId"), Number(fd.get("stock")));
+  const stock = Number(fd.get("stock"));
+  if (!Number.isFinite(stock)) return;
+  await setVariantStock(str(fd, "productId"), str(fd, "variantId"), stock);
   revalidateEverything();
 }
 
 export async function setAvailabilityAction(fd: FormData) {
-  await setAvailability(str(fd, "productId"), str(fd, "availability") as Availability);
+  await setAvailability(str(fd, "productId"), oneOf(str(fd, "availability"), AVAILABILITIES, "in_stock"));
   revalidateEverything();
 }
 
@@ -97,7 +102,7 @@ export async function saveProductAction(_: FormState, fd: FormData): Promise<For
   const fieldErrors: Record<string, string> = {};
   const name = str(fd, "name");
   const price = Math.round(Number(str(fd, "price").replace(",", ".")) * 100);
-  const availability = (str(fd, "availability") || "in_stock") as Availability;
+  const availability = oneOf(str(fd, "availability"), AVAILABILITIES, "in_stock");
   const preorderEta = str(fd, "preorderEta");
 
   let variants: Variant[] = [];
@@ -112,7 +117,12 @@ export async function saveProductAction(_: FormState, fd: FormData): Promise<For
   if (name.length < 2) fieldErrors.name = "Give the product a name.";
   if (!Number.isFinite(price) || price <= 0) fieldErrors.price = "Enter a price in rand, e.g. 250.";
   if (!variants.length) fieldErrors.variants = "Add at least one option, even if it is just “Standard”.";
-  if (availability === "preorder" && !preorderEta) fieldErrors.preorderEta = "When is the stock arriving?";
+  if (availability === "preorder" && Number.isNaN(Date.parse(preorderEta))) {
+    fieldErrors.preorderEta = "When is the stock arriving?";
+  }
+  // Only images the shop itself serves; uploads replace this in the real build.
+  const image = str(fd, "image");
+  if (image && !/^\/products\/[\w.-]+$/.test(image)) fieldErrors.image = "Pick one of the photos.";
   if (Object.keys(fieldErrors).length) return { fieldErrors };
 
   await saveProduct({
@@ -121,17 +131,20 @@ export async function saveProductAction(_: FormState, fd: FormData): Promise<For
     tagline: str(fd, "tagline"),
     description: str(fd, "description"),
     price,
-    category: (str(fd, "category") || "home") as Category,
-    image: str(fd, "image") || "/products/placeholder.svg",
+    category: oneOf(str(fd, "category"), CATEGORIES, "home"),
+    image: image || "/products/placeholder.svg",
     features: str(fd, "features")
       .split("\n")
       .map((f) => f.trim())
       .filter(Boolean),
     variants: variants.map((v) => ({
-      ...v,
       id: v.id || `v_${Math.random().toString(36).slice(2, 9)}`,
+      name: v.name.slice(0, 60),
+      stock: v.stock,
+      swatch: v.swatch && /^#[0-9a-f]{6}$/i.test(v.swatch) ? v.swatch : undefined,
+      image: v.image && /^\/products\/[\w.-]+$/.test(v.image) ? v.image : undefined,
     })),
-    status: (str(fd, "status") || "active") as ProductStatus,
+    status: oneOf(str(fd, "status"), PRODUCT_STATUSES, "active"),
     availability,
     preorderEta: availability === "preorder" ? new Date(preorderEta).toISOString() : undefined,
     lowStockThreshold: Math.max(0, Math.floor(Number(str(fd, "lowStockThreshold"))) || 0),

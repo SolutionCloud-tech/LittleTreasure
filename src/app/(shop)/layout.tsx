@@ -20,7 +20,7 @@ export default function ShopLayout({ children }: LayoutProps<"/">) {
           <Link href="/" aria-label="Little Treasures home">
             <Logo />
           </Link>
-          <nav className="hidden items-center gap-7 text-sm font-medium text-ink-soft md:flex">
+          <nav aria-label="Main" className="hidden items-center gap-7 text-sm font-medium text-ink-soft md:flex">
             <Link href="/#shop" className="transition hover:text-ink">Shop all</Link>
             <Link href="/?category=beach#shop" className="transition hover:text-ink">Beach</Link>
             <Link href="/?category=car#shop" className="transition hover:text-ink">Car</Link>
@@ -28,6 +28,25 @@ export default function ShopLayout({ children }: LayoutProps<"/">) {
           </nav>
           <CartButton />
         </div>
+        <nav
+          aria-label="Categories"
+          className="-mt-2 flex gap-2 overflow-x-auto px-4 pb-3 text-sm font-medium text-ink-soft md:hidden"
+        >
+          {[
+            ["/#shop", "Shop all"],
+            ["/?category=beach#shop", "Beach"],
+            ["/?category=car#shop", "Car"],
+            ["/?category=toys#shop", "Toys"],
+          ].map(([href, label]) => (
+            <Link
+              key={href}
+              href={href}
+              className="inline-flex h-9 shrink-0 items-center rounded-full border border-line bg-white px-3.5 hover:text-ink"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </header>
 
       <main className="flex-1">{children}</main>

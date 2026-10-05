@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { setAvailabilityAction } from "@/lib/actions";
 import { getDashboard } from "@/lib/data/store";
 import { formatPrice, relativeDay } from "@/lib/format";
@@ -27,29 +28,30 @@ export default async function Dashboard() {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const tasks =
     d.awaitingPayment.length + d.toPack.length + d.ready.length + d.preorders.length + (d.lowStock.length ? 1 : 0);
+  const things = tasks === 1 ? "1 thing" : `${tasks} things`;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow">{new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Johannesburg" })}</p>
-          <h1 className="font-display mt-1 text-4xl font-semibold tracking-tight">{greeting} 👋</h1>
+          <h1 className="font-display mt-1 text-4xl font-semibold tracking-tight">{greeting}</h1>
           <p className="mt-1 text-ink-soft">
-            You have <strong className="text-ink">{tasks} things</strong> to look at today.
+            You have <strong className="text-ink">{things}</strong> to look at today.
           </p>
         </div>
         <Link href="/admin/products/new" className="btn-primary">+ Add product</Link>
       </header>
 
       {/* KPIs */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 [&>*]:min-w-0">
         <Kpi label="Sales · last 30 days" value={formatPrice(d.revenue30)} now={d.revenue30} prev={d.revenuePrev30} />
         <Kpi label="Orders · last 30 days" value={String(d.orders30)} now={d.orders30} prev={d.ordersPrev30} />
         <Kpi label="Average order" value={formatPrice(d.avgOrder)} />
         <Kpi label="Sales today" value={formatPrice(d.revenueToday)} hint="Paid orders only" />
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.55fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         {/* Chart */}
         <section className="card p-5 sm:p-6">
           <div className="mb-4 flex items-baseline justify-between gap-3">
@@ -81,9 +83,19 @@ export default async function Dashboard() {
               icon={<PackageOpen className="size-[18px]" />}
               tone="bg-coral-tint text-coral-deep"
               title="Pack paid orders"
-              text={`${d.toPack.length} paid order${d.toPack.length === 1 ? "" : "s"} to pack or send`}
+              text={`${d.toPack.length} paid order${d.toPack.length === 1 ? "" : "s"} ready to pack or send`}
               count={d.toPack.length}
             />
+            {d.waitingOnStock.length > 0 && (
+              <Task
+                href="/admin/orders?status=paid"
+                icon={<Plane className="size-[18px]" />}
+                tone="bg-sea-tint text-sea"
+                title="Paid, waiting on pre-order stock"
+                text={`${d.waitingOnStock.length} order${d.waitingOnStock.length === 1 ? "" : "s"} to send when stock lands`}
+                count={d.waitingOnStock.length}
+              />
+            )}
             <Task
               href="/admin/orders?status=ready"
               icon={<Store className="size-[18px]" />}
@@ -106,7 +118,7 @@ export default async function Dashboard() {
                 <form action={setAvailabilityAction}>
                   <input type="hidden" name="productId" value={p.id} />
                   <input type="hidden" name="availability" value="in_stock" />
-                  <button className="btn-ghost btn-sm">Mark arrived</button>
+                  <SubmitButton className="btn-ghost btn-sm">Mark arrived</SubmitButton>
                 </form>
               </li>
             ))}
@@ -142,7 +154,7 @@ export default async function Dashboard() {
         </section>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.55fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         {/* Recent orders */}
         <section className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-line-soft px-5 py-4 sm:px-6">

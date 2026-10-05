@@ -133,12 +133,22 @@ export async function placeOrder(input: {
   const store = db();
   if (!input.lines.length) throw new CheckoutError("Your cart is empty.");
 
+  // Merge repeated lines for the same option so two lines can't oversell it together.
+  const merged = new Map<string, CartLine>();
+  for (const line of input.lines) {
+    if (!Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 99) {
+      throw new CheckoutError("One of the quantities in your cart isn't valid.");
+    }
+    const prev = merged.get(line.variantId);
+    merged.set(line.variantId, prev ? { ...prev, quantity: prev.quantity + line.quantity } : { ...line });
+  }
+
   // Validate everything before touching stock, so a failed checkout changes nothing.
-  const resolved = input.lines.map((line) => {
+  const resolved = [...merged.values()].map((line) => {
     const product = store.products.find((p) => p.id === line.productId && p.status === "active");
     const variant = product?.variants.find((v) => v.id === line.variantId);
     if (!product || !variant) throw new CheckoutError("An item in your cart is no longer available.");
-    if (line.quantity < 1 || line.quantity > variant.stock) {
+    if (line.quantity > variant.stock) {
       throw new CheckoutError(
         variant.stock === 0
           ? `${product.name} (${variant.name}) has just sold out.`
@@ -186,11 +196,23 @@ export async function placeOrder(input: {
   return clone(order);
 }
 
+/** Allowed moves: forward one step at a time, or cancel while the order is still open. */
+const TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending_payment: ["paid", "cancelled"],
+  paid: ["ready", "cancelled"],
+  ready: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+};
+
 export async function updateOrderStatus(id: string, status: OrderStatus) {
   const store = db();
   const order = store.orders.find((o) => o.id === id);
   if (!order) throw new Error("Order not found");
   if (order.status === status) return;
+  if (!TRANSITIONS[order.status].includes(status)) {
+    throw new Error(`Can't move an order from ${order.status} to ${status}`);
+  }
 
   // Cancelling puts the units back on the shelf.
   if (status === "cancelled" && order.status !== "cancelled") {
@@ -262,7 +284,16 @@ export async function getDashboard() {
     daily,
     topProducts: [...byProduct.values()].sort((a, b) => b.revenue - a.revenue),
     awaitingPayment: orders.filter((o) => o.status === "pending_payment"),
-    toPack: orders.filter((o) => o.status === "paid"),
+    toPack: orders.filter(
+      (o) =>
+        o.status === "paid" &&
+        !o.lines.some((l) => products.find((p) => p.id === l.productId)?.availability === "preorder"),
+    ),
+    waitingOnStock: orders.filter(
+      (o) =>
+        o.status === "paid" &&
+        o.lines.some((l) => products.find((p) => p.id === l.productId)?.availability === "preorder"),
+    ),
     ready: orders.filter((o) => o.status === "ready"),
     lowStock,
     preorders: products.filter((p) => p.status === "active" && p.availability === "preorder"),

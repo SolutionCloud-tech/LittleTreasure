@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { AlertCircle, ArrowRight, Loader2, Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
 import { checkoutAction, type FormState } from "@/lib/actions";
@@ -21,6 +21,16 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
       return product && variant ? { ...l, product, variant } : null;
     })
     .filter((r) => r !== null);
+
+  // Forget items that were removed from the shop since they were added.
+  useEffect(() => {
+    if (!ready) return;
+    for (const l of lines) {
+      if (!products.some((p) => p.id === l.productId && p.variants.some((v) => v.id === l.variantId))) {
+        remove(l.variantId);
+      }
+    }
+  }, [ready, lines, products, remove]);
 
   if (!ready) return <div className="mt-10 h-64 animate-pulse rounded-3xl bg-sand-deep" />;
 
@@ -52,7 +62,7 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
 
       <div className="space-y-8">
         {/* Items */}
-        <ul className="card divide-y divide-line-soft">
+        <ul className="card divide-y divide-line-soft" aria-label="Items in your cart">
           {rows.map((r) => {
             const over = r.quantity > r.variant.stock;
             return (
@@ -77,22 +87,22 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
                     <p className="font-semibold tabular-nums">{formatPrice(r.product.price * r.quantity)}</p>
                   </div>
                   <div className="mt-auto flex items-center justify-between gap-3">
-                    <div className="flex h-9 items-center rounded-full border border-line">
+                    <div className="flex h-11 items-center rounded-full border border-line sm:h-9">
                       <button
                         type="button"
-                        aria-label="Decrease"
+                        aria-label={`One fewer ${r.variant.name}`}
                         onClick={() => setQuantity(r.variantId, r.quantity - 1)}
-                        className="grid size-9 place-items-center text-ink-soft hover:text-ink"
+                        className="grid size-11 place-items-center text-ink-soft hover:text-ink sm:size-9"
                       >
                         <Minus className="size-3.5" />
                       </button>
                       <span className="w-6 text-center text-sm font-semibold tabular-nums">{r.quantity}</span>
                       <button
                         type="button"
-                        aria-label="Increase"
+                        aria-label={`One more ${r.variant.name}`}
                         disabled={r.quantity >= r.variant.stock}
                         onClick={() => setQuantity(r.variantId, r.quantity + 1)}
-                        className="grid size-9 place-items-center text-ink-soft hover:text-ink disabled:opacity-30"
+                        className="grid size-11 place-items-center text-ink-soft hover:text-ink disabled:opacity-30 sm:size-9"
                       >
                         <Plus className="size-3.5" />
                       </button>
@@ -100,7 +110,7 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
                     <button
                       type="button"
                       onClick={() => remove(r.variantId)}
-                      className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-coral-deep"
+                      className="inline-flex min-h-11 items-center gap-1.5 text-sm text-ink-muted hover:text-coral-deep"
                     >
                       <Trash2 className="size-4" /> Remove
                     </button>
@@ -202,7 +212,7 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
         )}
         {state.error && (
           <p className="flex gap-2 rounded-xl bg-coral-tint p-3 text-sm font-medium text-coral-deep" role="alert">
-            <AlertCircle className="size-4 shrink-0 translate-y-0.5" /> {state.error}
+            <AlertCircle className="size-4 shrink-0 translate-y-0.5" aria-hidden /> {state.error}
           </p>
         )}
         <button type="submit" disabled={pending} className="btn-accent h-13 w-full text-base">
@@ -230,9 +240,14 @@ function Field({
         name={name}
         className={`field ${error ? "border-coral focus:border-coral focus:ring-coral/10" : ""}`}
         aria-invalid={!!error}
+        aria-describedby={error ? `${name}-error` : undefined}
         {...rest}
       />
-      {error && <p className="mt-1.5 text-xs font-medium text-coral-deep">{error}</p>}
+      {error && (
+        <p id={`${name}-error`} className="mt-1.5 text-xs font-medium text-coral-deep">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

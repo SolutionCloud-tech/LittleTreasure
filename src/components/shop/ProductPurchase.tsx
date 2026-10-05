@@ -92,12 +92,12 @@ export function ProductPurchase({ product }: { product: Product }) {
         )}
 
         {/* Variant picker */}
-        <fieldset className="space-y-3">
+        <div role="radiogroup" aria-labelledby="variant-label" className="space-y-3">
           <div className="flex items-baseline justify-between gap-3">
-            <legend className="text-sm font-semibold">
+            <p id="variant-label" className="text-sm font-semibold">
               {product.variants.some((v) => v.swatch) ? "Colour" : "Choose"}:{" "}
               <span className="font-normal text-ink-soft">{variant?.name}</span>
-            </legend>
+            </p>
             {variant && <AvailabilityBadge info={vInfo} size="sm" />}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -110,7 +110,8 @@ export function ProductPurchase({ product }: { product: Product }) {
                   type="button"
                   onClick={() => choose(v.id)}
                   disabled={out}
-                  aria-pressed={selected}
+                  role="radio"
+                  aria-checked={selected}
                   className={`group relative inline-flex h-11 items-center gap-2 rounded-full border pr-4 text-sm font-medium transition ${
                     v.swatch ? "pl-1.5" : "pl-4"
                   } ${
@@ -135,7 +136,7 @@ export function ProductPurchase({ product }: { product: Product }) {
               );
             })}
           </div>
-        </fieldset>
+        </div>
 
         {/* Quantity + add */}
         <div className="space-y-3">

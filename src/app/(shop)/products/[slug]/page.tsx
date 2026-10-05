@@ -18,7 +18,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 md:pt-10">
-      <nav className="mb-6 flex items-center gap-1.5 text-sm text-ink-muted">
+      <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-1.5 text-sm text-ink-muted">
         <Link href="/#shop" className="inline-flex items-center gap-1 hover:text-ink">
           <ChevronLeft className="size-4" /> Shop
         </Link>

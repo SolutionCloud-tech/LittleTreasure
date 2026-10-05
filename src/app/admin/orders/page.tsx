@@ -24,7 +24,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
       </header>
 
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="inline-flex gap-1 rounded-2xl bg-[#e9e4dc] p-1">
+        <div className="inline-flex gap-1 rounded-2xl bg-admin-well p-1">
           {TABS.map((t) => (
             <Link
               key={t}
@@ -64,7 +64,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                   </td>
                   <td className="px-3 py-3.5">
                     <p className="font-medium">{o.customer.name}</p>
-                    <a href={whatsappLink(o.customer.phone)} className="relative z-10 inline-flex items-center gap-1 text-xs text-ink-muted hover:text-[#1f9d55]">
+                    <a href={whatsappLink(o.customer.phone)} className="relative z-10 inline-flex items-center gap-1 text-xs text-ink-muted hover:text-whatsapp">
                       <MessageCircle className="size-3" /> {o.customer.phone}
                     </a>
                   </td>

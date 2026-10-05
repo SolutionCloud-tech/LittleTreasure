@@ -79,7 +79,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
                       {v.stock === 0 ? "Sold out" : v.stock <= p.lowStockThreshold ? "Running low" : p.availability === "preorder" ? "Pre-order allocation" : "In stock"}
                     </p>
                   </div>
-                  <StockStepper key={`${v.id}-${v.stock}`} productId={p.id} variantId={v.id} stock={v.stock} low={p.lowStockThreshold} />
+                  <StockStepper key={`${v.id}-${v.stock}`} productId={p.id} variantId={v.id} stock={v.stock} low={p.lowStockThreshold} name={v.name} />
                 </div>
               ))}
             </div>

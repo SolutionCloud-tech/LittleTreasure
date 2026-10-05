@@ -8,17 +8,23 @@
   --color-sand-deep: #f2ebdf;
   --color-ink: #1d2b2f;
   --color-ink-soft: #4d5a5c;
-  --color-ink-muted: #7b8587;
+  --color-ink-muted: #646e71;
   --color-line: #e7dfd2;
   --color-line-soft: #f0ebe2;
 
   --color-sea: #0e5e63;
   --color-sea-deep: #0a4447;
   --color-sea-tint: #e3efee;
-  --color-coral: #e5603c;
-  --color-coral-deep: #c84b2a;
+  --color-coral: #c4482a;
+  --color-coral-deep: #b03d20;
   --color-coral-tint: #fbe7e0;
   --color-sun: #f4b63f;
+
+  --color-admin: #f4f1ec;
+  --color-admin-side: #efebe4;
+  --color-admin-well: #e9e4dc;
+  --color-whatsapp: #188046;
+  --color-whatsapp-deep: #146b3a;
 
   --color-ok: #2a7149;
   --color-ok-tint: #e3f1e8;
@@ -26,7 +32,7 @@
   --color-low-tint: #fcefd6;
   --color-pre: #3b49a3;
   --color-pre-tint: #e7e9fa;
-  --color-out: #6d7375;
+  --color-out: #5c6264;
   --color-out-tint: #ece9e4;
 
   --shadow-card: 0 1px 2px rgb(29 43 47 / 0.04), 0 8px 24px -12px rgb(29 43 47 / 0.12);
@@ -63,7 +69,7 @@
   @apply btn border border-line bg-white text-ink hover:border-ink/30;
 }
 @utility btn-sm {
-  @apply h-9! px-3.5! text-[13px]!;
+  @apply h-11! px-3.5! text-[13px]! sm:h-9!;
 }
 @utility field {
   @apply block w-full rounded-xl border border-line bg-white px-3.5 h-11 text-[15px] text-ink placeholder:text-ink-muted/70
@@ -94,4 +100,15 @@
 }
 .animate-rise {
   animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

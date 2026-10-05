@@ -64,7 +64,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
             </dl>
             <a
               href={`https://wa.me/${SHOP_WHATSAPP}?text=${encodeURIComponent(waText)}`}
-              className="btn w-full bg-[#1f9d55] text-white hover:bg-[#188046]"
+              className="btn w-full bg-whatsapp text-white hover:bg-whatsapp-deep"
             >
               <MessageCircle className="size-4" /> Send proof of payment
             </a>
