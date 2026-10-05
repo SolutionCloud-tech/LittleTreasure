@@ -139,7 +139,7 @@ export function ProductForm({ product }: { product?: Product }) {
             {variants.map((v, i) => (
               <div key={i} className="flex items-center gap-2">
                 <label className="relative size-11 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-line" title="Colour swatch (optional)">
-                  <span className="absolute inset-0" style={{ background: v.swatch || "repeating-linear-gradient(45deg,#f2ebdf 0 4px,#fff 4px 8px)" }} />
+                  <span className="absolute inset-0" style={{ background: v.swatch || "repeating-linear-gradient(45deg,var(--color-sand-deep) 0 4px,#fff 4px 8px)" }} />
                   <input type="color" aria-label={`Colour swatch for ${v.name || "this option"} (optional)`} value={v.swatch || "#ffffff"} onChange={(e) => update(i, { swatch: e.target.value })} className="absolute inset-0 opacity-0" />
                 </label>
                 <input aria-label="Option name" className="field" value={v.name} onChange={(e) => update(i, { name: e.target.value })} placeholder="e.g. Beige" />
