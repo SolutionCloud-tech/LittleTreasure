@@ -1,4 +1,5 @@
 import "server-only";
+import { randomBytes } from "node:crypto";
 import type {
   Availability,
   CartLine,
@@ -199,7 +200,8 @@ export async function placeOrder(input: {
   const now = new Date().toISOString();
 
   const order: Order = {
-    id: `ord_${number}`,
+    // Random, unguessable id: the order page is reachable by link without signing in.
+    id: `ord_${randomBytes(9).toString("base64url")}`,
     number,
     userId: input.userId,
     createdAt: now,

@@ -189,7 +189,7 @@ export function seedOrders(products: Product[]): Order[] {
             }));
 
       orders.push({
-        id: `ord_${number}`,
+        id: `ord_demo${number}`,
         number,
         createdAt,
         status,

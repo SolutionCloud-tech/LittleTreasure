@@ -55,6 +55,7 @@ export function CartView({
     );
   }
 
+  const itemCount = rows.reduce((s, r) => s + r.quantity, 0);
   const subtotal = rows.reduce((s, r) => s + r.product.price * r.quantity, 0);
   const shipping = fulfilment === "courier" ? shippingFee : 0;
   const hasPreorder = rows.some((r) => r.product.availability === "preorder");
@@ -220,7 +221,7 @@ export function CartView({
       <aside className="card space-y-5 p-6 lg:sticky lg:top-28">
         <h2 className="font-display text-2xl font-semibold">Summary</h2>
         <dl className="space-y-3 text-sm">
-          <Row label={`Subtotal (${rows.reduce((s, r) => s + r.quantity, 0)} items)`} value={formatPrice(subtotal)} />
+          <Row label={`Subtotal (${itemCount} item${itemCount === 1 ? "" : "s"})`} value={formatPrice(subtotal)} />
           <Row label={fulfilment === "courier" ? "PUDO courier" : "Collection"} value={shipping ? formatPrice(shipping) : "Free"} />
           <div className="flex items-baseline justify-between border-t border-line pt-4 text-base">
             <dt className="font-semibold">Total</dt>
@@ -241,7 +242,7 @@ export function CartView({
           {pending ? <Loader2 className="size-5 animate-spin" /> : null}
           {pending ? "Placing order…" : `Place order · ${formatPrice(subtotal + shipping)}`}
         </button>
-        <p className="text-center text-xs text-ink-muted">No account needed. Your items are held once you place the order.</p>
+        <p className="text-center text-xs text-ink-muted">{user ? "Your items are held once you place the order." : "No account needed. Your items are held once you place the order."}</p>
       </aside>
     </form>
   );

@@ -13,6 +13,9 @@ export default async function SignInPage({ searchParams }: PageProps<"/account/s
   return (
     <AuthShell title="Welcome back" intro="Sign in to check your orders and check out faster.">
       <SignInForm next={target} />
+      <p className="mt-6 rounded-xl border border-dashed border-ink/15 p-3 text-center text-xs text-ink-soft">
+        Demo account: <strong className="text-ink">thandi@example.com</strong> / <strong className="text-ink">demo1234</strong>
+      </p>
     </AuthShell>
   );
 }

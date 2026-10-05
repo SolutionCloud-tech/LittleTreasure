@@ -19,6 +19,19 @@ npm install
 npm run dev        # http://localhost:3000, admin at /admin
 ```
 
+## Deploying a demo (Vercel)
+
+1. Sign in at vercel.com with GitHub and import `SolutionCloud-tech/LittleTreasure`
+   (pick the branch with the shop on it if it isn't merged yet).
+2. Add an environment variable `AUTH_SECRET` set to a long random string
+   (e.g. the output of `openssl rand -hex 32`). The app refuses to start in production
+   without it.
+3. Deploy. Every push redeploys automatically.
+
+Because the POC keeps data in memory, orders, stock changes and accounts made on the
+live demo reset whenever Vercel restarts the server, and can differ between server
+instances. That is expected until a database is added.
+
 ## How it's put together
 
 - Next.js (App Router) + TypeScript + Tailwind CSS.

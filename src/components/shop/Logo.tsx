@@ -9,7 +9,7 @@ export function Logo({ className = "" }: { className?: string }) {
         />
         <path d="M11.3 23.4 16 13.6l4.7 9.8c-1.4.7-3 1.1-4.7 1.1s-3.3-.4-4.7-1.1Z" className="fill-coral" />
       </svg>
-      <span className="font-display text-[21px] leading-none font-semibold tracking-tight text-ink">
+      <span className="font-display text-[19px] leading-none whitespace-nowrap sm:text-[21px] font-semibold tracking-tight text-ink">
         Little Treasures
       </span>
     </span>

@@ -88,13 +88,13 @@ export async function checkoutAction(_: FormState, fd: FormData): Promise<FormSt
 
 /* ------------------------------------------------------------------ accounts */
 
-const EMAIL = /^[^s@]+@[^s@]+.[^s@]+$/;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
 
 function checkDetails(name: string, phone: string, email: string) {
   const fieldErrors: Record<string, string> = {};
   if (name.length < 2) fieldErrors.name = "Please enter your name.";
-  if (phone.replace(/D/g, "").length < 9) fieldErrors.phone = "We need a number to WhatsApp you on.";
+  if (phone.replace(/\D/g, "").length < 9) fieldErrors.phone = "We need a number to WhatsApp you on.";
   if (!EMAIL.test(email)) fieldErrors.email = "Enter an email address like you@example.com.";
   return fieldErrors;
 }

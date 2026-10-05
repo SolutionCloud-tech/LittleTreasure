@@ -42,7 +42,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
         </p>
       </div>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2">
+      <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 [&>*]:min-w-0">
         {order.payment === "eft" && (
           <section className="card space-y-4 p-6">
             <h2 className="font-semibold">EFT details</h2>
