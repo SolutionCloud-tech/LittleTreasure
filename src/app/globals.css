@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-serif), ui-serif, Georgia, serif;
+
+  --color-sand: #faf6ef;
+  --color-sand-deep: #f2ebdf;
+  --color-ink: #1d2b2f;
+  --color-ink-soft: #4d5a5c;
+  --color-ink-muted: #7b8587;
+  --color-line: #e7dfd2;
+  --color-line-soft: #f0ebe2;
+
+  --color-sea: #0e5e63;
+  --color-sea-deep: #0a4447;
+  --color-sea-tint: #e3efee;
+  --color-coral: #e5603c;
+  --color-coral-deep: #c84b2a;
+  --color-coral-tint: #fbe7e0;
+  --color-sun: #f4b63f;
+
+  --color-ok: #2a7149;
+  --color-ok-tint: #e3f1e8;
+  --color-low: #9a5507;
+  --color-low-tint: #fcefd6;
+  --color-pre: #3b49a3;
+  --color-pre-tint: #e7e9fa;
+  --color-out: #6d7375;
+  --color-out-tint: #ece9e4;
+
+  --shadow-card: 0 1px 2px rgb(29 43 47 / 0.04), 0 8px 24px -12px rgb(29 43 47 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(29 43 47 / 0.05), 0 18px 40px -16px rgb(29 43 47 / 0.25);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-sand text-ink font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-sea;
+  }
+  ::selection {
+    @apply bg-sun/40;
+  }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 h-11 text-sm font-semibold transition
+    disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98];
+}
+@utility btn-primary {
+  @apply btn bg-ink text-sand hover:bg-sea-deep;
+}
+@utility btn-accent {
+  @apply btn bg-coral text-white hover:bg-coral-deep;
+}
+@utility btn-ghost {
+  @apply btn border border-line bg-white text-ink hover:border-ink/30;
+}
+@utility btn-sm {
+  @apply h-9! px-3.5! text-[13px]!;
+}
+@utility field {
+  @apply block w-full rounded-xl border border-line bg-white px-3.5 h-11 text-[15px] text-ink placeholder:text-ink-muted/70
+    transition focus:border-sea focus:outline-none focus:ring-4 focus:ring-sea/10;
+  &:is(textarea) {
+    @apply h-auto py-3 leading-relaxed;
+  }
+}
+@utility label {
+  @apply mb-1.5 block text-[13px] font-semibold text-ink-soft;
+}
+@utility card {
+  @apply rounded-2xl border border-line bg-white;
+}
+@utility eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
